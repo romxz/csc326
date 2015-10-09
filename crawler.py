@@ -145,8 +145,10 @@ class crawler(object):
         self._mock_next_word_id += 1
         return ret_id
     
-    ### TODO: crawler.get_inverted_index()
-    def get_inverted_index(self, recrawl=1, recrawl_depth=0):
+    ### Returns self._inverted_index dictionary, as required
+    ### Arguments recrawl and recrawl_depth are just in case you want to redo the
+    ### crawl step at different depths before getting the inversion & can be left blank
+    def get_inverted_index(self, recrawl=1, recrawl_depth=1):
         """ Implement correctly. returns inverted index in a dict(), using
         word id as key, and the list of document ids as value. The list of documents 
         should be sorted in a set().
@@ -181,7 +183,9 @@ class crawler(object):
                 self._inverted_index[word_id] = (doc_ids_old.difference(doc_ids_new)).union(doc_ids_new)
         
     
-    ### TODO: crawler.get_resolved_inverted_index()
+    ### Returns self._resolved_inverted_index dictionary, as required
+    ### Arguments recrawl and recrawl_depth are just in case you want to redo the
+    ### crawl step at different depths before getting the inversion & can be left blank
     def get_resolved_inverted_index(self, recrawl=1, recrawl_depth=0):
         """ Implement correctly. Same as inverted index, except word ids are replaced 
         by the word strings, and the document ids are replaced by URL strings in the
