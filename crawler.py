@@ -475,9 +475,9 @@ class crawler(object):
 if __name__ == "__main__":
     bot = crawler(None, "urls_mock.txt")
     bot.crawl(depth=1)
-    inverted_index = bot.get_inverted_index(0)
+    inverted_index = bot.get_inverted_index()
     print inverted_index
     
-    resolved_index = bot.get_resolved_inverted_index(0)
+    resolved_index = bot.get_resolved_inverted_index()
     print resolved_index
 
