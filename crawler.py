@@ -48,7 +48,7 @@ class crawler(object):
         self._url_queue = [ ]
         self._doc_id_cache = { }
         self._word_id_cache = { }
-        # TODO: _inverted_index
+        # TODO: _inverted_index. Not sure if I need this or not
         self._inverted_index = { }
 
         # functions to call when entering and exiting specific tags
@@ -145,7 +145,8 @@ class crawler(object):
         should be sorted in a set().
         i.e. returns a dict() = {word_id1:{doc_id1#1, doc_id1#2,...},
             word_id2:{doc_id2#1, doc_id2#2,...}, ...}"""
-        # TODO: update inverted index
+        """
+        # TODO: update inverted index. Not sure about all this:
         for doc_id in self._doc_id_cache:
             for word_id in self._word_id_cache:
                 if word_id in self._doc_index[doc_id]:
@@ -153,6 +154,7 @@ class crawler(object):
         
         
         return self._inverted_index
+        """
     
     ### TODO: crawler.get_resolved_inverted_index()
     def get_resolved_inverted_index(self):
