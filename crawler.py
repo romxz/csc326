@@ -54,6 +54,9 @@ class crawler(object):
         self._inverted_index = { }
         # TODO: _resolved_inverted_index
         self._resolved_inverted_index = { }
+        # TODO: word and document number counters
+        self._num_words = 0
+        self._num_docs = 0
 
         # functions to call when entering and exiting specific tags
         self._enter = defaultdict(lambda *a, **ka: self._visit_ignore)
@@ -143,39 +146,66 @@ class crawler(object):
         return ret_id
     
     ### TODO: crawler.get_inverted_index()
-    def get_inverted_index(self, recrawl=1):
+    def get_inverted_index(self, recrawl=1, recrawl_depth=1):
         """ Implement correctly. returns inverted index in a dict(), using
         word id as key, and the list of document ids as value. The list of documents 
         should be sorted in a set().
-        i.e. returns a dict() = {word_id1:set(doc_id1#1, doc_id1#2,...),
+        i.e. returns a dict(), _inverted_index = {word_id1:set(doc_id1#1, doc_id1#2,...),
             word_id2:set(doc_id2#1, doc_id2#2,...), ... etc}"""
         # TODO: update inverted index
         if recrawl:
-            self.crawl
-        
-        # Loop for every word in the lexicon
-        for word in self._word_id_cache:
-            # Loop for every document, since we need to see if it contains the word
-            doc_new = set()
-            for doc in self._doc_index:
-                if word in self._doc_index[doc]:
-                    doc_new.add(doc)
-            # Now add the list of docs to the inverted index for that word
-            if word not in self._inverted_index:
-                self._inverted_index[word] = doc_new
-            else:
-                doc_old = self._inverted_index[word]
-                self._inverted_index[word] = (doc_old.difference(doc_new)).union(doc_new)
+            self.crawl(recrawl_depth)
+
+        # update the inverted index
+        self._update_inverted_index()
         
         return self._inverted_index
+
+    # Updates inverted index
+    def _update_inverted_index(self):
+        """ Handles the actual inverted index implementation/update """
+        # Loop for every word in the lexicon
+        for word in self._word_id_cache:
+            # Loop for every document, and add it if it contains the word
+            word_id = self._word_id_cache[word]
+            doc_ids_new = set()
+            for doc_id in self._doc_index:
+                if word_id in self._doc_index[doc_id]:
+                    doc_ids_new.add(doc_id)
+            
+            # Now add the list of docs to the inverted index for that word
+            if word_id not in self._inverted_index:
+                self._inverted_index[word_id] = doc_ids_new
+            else:
+                doc_ids_old = self._inverted_index[word_id]
+                self._inverted_index[word_id] = (doc_ids_old.difference(doc_ids_new)).union(doc_ids_new)
+        
     
     ### TODO: crawler.get_resolved_inverted_index()
-    def get_resolved_inverted_index(self):
+    def get_resolved_inverted_index(self, recrawl=1, recrawl_depth=1):
         """ Implement correctly. Same as inverted index, except word ids are replaced 
         by the word strings, and the document ids are replaced by URL strings in the
         inverted index"""
-    
-        return 1
+        if recrawl:
+            self.crawl(recrawl_depth)
+
+        # update the inverted index
+        self._update_inverted_index()
+
+        # resolve for each word
+        for word_id in self._inverted_index:
+            docs_new = set()
+
+            # resolve for each document that contains that word
+            for doc_id in self._inverted_index[word_id]:
+                url = self.reverse_document_id(doc_id)
+                if (url != None):
+                    docs_new.add(url)
+            
+            # Update the document urls for that word
+            self._resolved_inverted_index[self.reverse_word_id(word_id)] = docs_new
+
+        return self._resolved_inverted_index
     
     def word_id(self, word):
         """Get the word id of some specific word."""
@@ -186,7 +216,9 @@ class crawler(object):
         #          word is in the lexicon
         #       2) query the lexicon for the id assigned to this word, 
         #          store it in the word id cache, and return the id.
-        word_id = len(self._word_id_cache)
+        word_id = self._num_words
+        self._num_words += 1
+
         self._word_id_cache[word] = word_id
         return word_id
         
@@ -196,6 +228,15 @@ class crawler(object):
         return word_id
         """
     
+    # TODO: reverse word_id, for simplicity purposes
+    def reverse_word_id(self, word_id):
+        """ Get the word for a specific word id. """
+        for word in self._word_id_cache:
+            if (word_id == self._word_id_cache[word]):
+                return word
+        return None
+
+
     def document_id(self, url):
         """Get the document id for some url."""
         if url in self._doc_id_cache:
@@ -204,7 +245,9 @@ class crawler(object):
         # TODO: just like word id cache, but for documents. if the document
         #       doesn't exist in the db then only insert the url and leave
         #       the rest to their defaults.
-        doc_id = len(self._doc_id_cache)
+        doc_id = self._num_docs
+        self._num_docs += 1
+
         self._doc_id_cache[url] = doc_id
         return doc_id        
         
@@ -214,6 +257,15 @@ class crawler(object):
         return doc_id
         """
     
+    # TODO: reverse document_id, for simplicity purposes
+    def reverse_document_id(self, doc_id):
+        """ Get the url from the doc id"""
+        for url in self._doc_id_cache:
+            if (doc_id == self._doc_id_cache[url]):
+                return url
+        return None 
+
+
     def _fix_url(self, curr_url, rel):
         """Given a url and either something relative to that url or another url,
         get a properly parsed url."""
@@ -423,4 +475,9 @@ class crawler(object):
 if __name__ == "__main__":
     bot = crawler(None, "urls_mock.txt")
     bot.crawl(depth=1)
+    inverted_index = bot.get_inverted_index(0)
+    print inverted_index
+    
+    resolved_index = bot.get_resolved_inverted_index(0)
+    print resolved_index
 
