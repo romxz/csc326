@@ -146,7 +146,7 @@ class crawler(object):
         return ret_id
     
     ### TODO: crawler.get_inverted_index()
-    def get_inverted_index(self, recrawl=1, recrawl_depth=1):
+    def get_inverted_index(self, recrawl=1, recrawl_depth=0):
         """ Implement correctly. returns inverted index in a dict(), using
         word id as key, and the list of document ids as value. The list of documents 
         should be sorted in a set().
@@ -182,7 +182,7 @@ class crawler(object):
         
     
     ### TODO: crawler.get_resolved_inverted_index()
-    def get_resolved_inverted_index(self, recrawl=1, recrawl_depth=1):
+    def get_resolved_inverted_index(self, recrawl=1, recrawl_depth=0):
         """ Implement correctly. Same as inverted index, except word ids are replaced 
         by the word strings, and the document ids are replaced by URL strings in the
         inverted index"""
@@ -203,7 +203,7 @@ class crawler(object):
                     docs_new.add(url)
             
             # Update the document urls for that word
-            self._resolved_inverted_index[self.reverse_word_id(word_id)] = docs_new
+            self._resolved_inverted_index[str(self.reverse_word_id(word_id))] = docs_new
 
         return self._resolved_inverted_index
     
