@@ -48,8 +48,12 @@ class crawler(object):
         self._url_queue = [ ]
         self._doc_id_cache = { }
         self._word_id_cache = { }
-        # TODO: _inverted_index. Not sure if I need this or not
+        # TODO: _doc_index
+        self._doc_index = { }
+        # TODO: _inverted_index
         self._inverted_index = { }
+        # TODO: _resolved_inverted_index
+        self._resolved_inverted_index = { }
 
         # functions to call when entering and exiting specific tags
         self._enter = defaultdict(lambda *a, **ka: self._visit_ignore)
@@ -139,22 +143,31 @@ class crawler(object):
         return ret_id
     
     ### TODO: crawler.get_inverted_index()
-    def get_inverted_index(self):
+    def get_inverted_index(self, recrawl=1):
         """ Implement correctly. returns inverted index in a dict(), using
         word id as key, and the list of document ids as value. The list of documents 
         should be sorted in a set().
-        i.e. returns a dict() = {word_id1:{doc_id1#1, doc_id1#2,...},
-            word_id2:{doc_id2#1, doc_id2#2,...}, ...}"""
-        """
-        # TODO: update inverted index. Not sure about all this:
-        for doc_id in self._doc_id_cache:
-            for word_id in self._word_id_cache:
-                if word_id in self._doc_index[doc_id]:
-                    self._inverted_index[word_id].add(doc_id)
+        i.e. returns a dict() = {word_id1:set(doc_id1#1, doc_id1#2,...),
+            word_id2:set(doc_id2#1, doc_id2#2,...), ... etc}"""
+        # TODO: update inverted index
+        if recrawl:
+            self.crawl
         
+        # Loop for every word in the lexicon
+        for word in self._word_id_cache:
+            # Loop for every document, since we need to see if it contains the word
+            doc_new = set()
+            for doc in self._doc_index:
+                if word in self._doc_index[doc]:
+                    doc_new.add(doc)
+            # Now add the list of docs to the inverted index for that word
+            if word not in self._inverted_index:
+                self._inverted_index[word] = doc_new
+            else:
+                doc_old = self._inverted_index[word]
+                self._inverted_index[word] = (doc_old.difference(doc_new)).union(doc_new)
         
         return self._inverted_index
-        """
     
     ### TODO: crawler.get_resolved_inverted_index()
     def get_resolved_inverted_index(self):
@@ -249,6 +262,26 @@ class crawler(object):
         # TODO: knowing self._curr_doc_id and the list of all words and their
         #       font sizes (in self._curr_words), add all the words into the
         #       database for this document
+        
+        # Keep track of new words
+        words_new = [ ]
+        # Add only the words, not the fonts
+        for words_and_fonts in self._curr_words:
+            words_new.append(words_and_fonts[0])
+        
+        # Add words to the index if it is first time we index the doc
+        # Add non-duplicate words otherwise
+        if self._curr_doc_id not in self._doc_index:
+            self._doc_index[self._curr_doc_id] = words_new
+        else:
+            words_old = self._doc_index[self._curr_doc_id]
+            for word in words_new:
+                if word not in words_old:
+                    self._doc_index[self._curr_doc_id].append(word)
+
+        #print "doc_index: "
+        #print self._doc_index
+
         print "    num words="+ str(len(self._curr_words))
 
     def _increase_font_factor(self, factor):
@@ -353,14 +386,32 @@ class crawler(object):
                 socket = urllib2.urlopen(url, timeout=timeout)
                 soup = BeautifulSoup(socket.read())
 
+                #print "depth:"
                 self._curr_depth = depth_ + 1
+                #print self._curr_depth
+                
+                #print "url:"
                 self._curr_url = url
+                #print self._curr_depth
+
+                #print "doc_id:"
                 self._curr_doc_id = doc_id
+                #print self._curr_doc_id
+
                 self._font_size = 0
+                #print self._font_size
+
                 self._curr_words = [ ]
                 self._index_document(soup)
                 self._add_words_to_document()
+                
+                #print "words:"
+                #print self._curr_words
+
                 print "    url="+repr(self._curr_url)
+                #print ""
+                #print ""
+                #print ""
 
             except Exception as e:
                 print e
@@ -370,6 +421,6 @@ class crawler(object):
                     socket.close()
 
 if __name__ == "__main__":
-    bot = crawler(None, "urls.txt")
+    bot = crawler(None, "urls_mock.txt")
     bot.crawl(depth=1)
 
